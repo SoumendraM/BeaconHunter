@@ -5,6 +5,8 @@ from sklearn.ensemble import IsolationForest
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import precision_recall_curve, auc
 import joblib
 
 def train_supervised_models(beacon_df: pd.DataFrame):
@@ -42,13 +44,13 @@ def train_supervised_models(beacon_df: pd.DataFrame):
     print("Sample Risk Scores:")
     #print(risk_scores[10:100])
 
-    # calcolate the ROC-AUC score for both models
-    from sklearn.metrics import roc_auc_score
+    # calculate the ROC-AUC score for both models
+    
     rf_roc_auc = roc_auc_score(y_test, rf_classifier.predict_proba(X_test)[:, 1])
     print(f"Random Forest ROC-AUC: {rf_roc_auc}")
 
     # calculate PR-AUC score
-    from sklearn.metrics import precision_recall_curve, auc
+    
     precision, recall, _ = precision_recall_curve(y_test, rf_classifier.predict_proba(X_test)[:, 1])
     rf_pr_auc = auc(recall, precision)  
     print(f"Random Forest PR-AUC: {rf_pr_auc}")
