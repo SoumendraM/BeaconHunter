@@ -1,3 +1,5 @@
+import pandas as pd
+
 def create_derived_features(beacon_df):
     # create derived feature based on variance of inter_event_seconds per host_id, dst_port
     beacon_df['beaconness'] = beacon_df.groupby('host_id')['inter_event_seconds'].transform(lambda x: x.var())

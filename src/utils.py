@@ -29,14 +29,39 @@ def categorical_cols_to_dummies(beacon_df, categorical_cols: list):
     beacon_df = pd.get_dummies(beacon_df, columns=categorical_cols, drop_first=True)
     return beacon_df
 
+def target_encode_categorical_columns(beacon_df, categorical_cols: list, target_col: str):
+    for col in categorical_cols:
+        target_means = beacon_df.groupby(col)[target_col].mean()
+        beacon_df[col] = beacon_df[col].map(target_means)
+    return beacon_df    
+
 def scale_numerical_features(beacon_df, numerical_features: list):
     scaler = StandardScaler()
     beacon_df[numerical_features] = scaler.fit_transform(beacon_df[numerical_features])
     return beacon_df
 
-def calculate_fusion_risk_scores(beacon_df_org: pd.DataFrame):
+def process_features(beacon_df: pd.DataFrame):
+    # Fill missing values in inter_event_seconds with median
+    beacon_df['inter_event_seconds'] = beacon_df['inter_event_seconds'].fillna(beacon_df['inter_event_seconds'].median())
+    # Create derived features
+    beacon_df = create_derived_features(beacon_df)
+    # Remove columns that are not needed for model training
+    beacon_df.drop(columns=['event_id', 'timestamp', 'src_ip', 'dst_ip', 'signed_binary', 'host_id', 'dst_port'], inplace=True)
+    # Convert categorical columns to category dtype
+    categorical_cols = ['proc_name', 'wierdness', 'proc_risk']
+    beacon_df = category_cols_to_category_dtype(beacon_df, categorical_cols)
+    # Convert categorical columns to numerical using dummies
+    categorical_cols = ['proc_name', 'protocol', 'country_code', 'user', 'wierdness', 'proc_risk']
+    beacon_df = categorical_cols_to_dummies(beacon_df, categorical_cols)
+    # Apply feature scaling to numerical features
+    numerical_features = ['inter_event_seconds', 'beaconness', 'bytes_in', 'bytes_out']
+    beacon_df = scale_numerical_features(beacon_df, numerical_features)
+
+    return beacon_df
+
+def calculate_fusion_risk_scores(beacon_df_org: pd.DataFrame, rf_classifier, isolation_forest):
     # Load the trained Random Forest model
-    rf_classifier = joblib.load(r'C:\Users\Soumendra\Documents\GitHub\BeaconHunter\artifacts\rf_classifier_model.joblib')
+    #rf_classifier = joblib.load(r'C:\Users\Soumendra\Documents\GitHub\BeaconHunter\artifacts\rf_classifier_model.joblib')
 
     beacon_df = beacon_df_org.copy()
     beacon_df = create_derived_features(beacon_df)
@@ -58,7 +83,7 @@ def calculate_fusion_risk_scores(beacon_df_org: pd.DataFrame):
     prediction = rf_classifier.predict(beacon_df)
 
     # Load trained Isolation Forest model
-    isolation_forest = joblib.load(r'C:\Users\Soumendra\Documents\GitHub\BeaconHunter\artifacts\isolation_forest_model.joblib')
+    #isolation_forest = joblib.load(r'C:\Users\Soumendra\Documents\GitHub\BeaconHunter\artifacts\isolation_forest_model.joblib')
     # Calculate anomaly scores
     anomaly_scores = isolation_forest.decision_function(beacon_df)
     beacon_df['anomaly_score'] = anomaly_scores
