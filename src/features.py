@@ -14,3 +14,5 @@ def create_derived_features(beacon_df):
     beacon_df['proc_risk'] = beacon_df['proc_name'].apply(lambda x: 'high' if x in high_risk_processes else 'low')
 
     return beacon_df
+
+

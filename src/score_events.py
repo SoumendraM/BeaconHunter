@@ -4,6 +4,7 @@ import joblib
 import pandas as pd
 
 from utils import calculate_fusion_risk_scores, process_features
+from models import RandomForestModel
 
 def main():
 
@@ -23,7 +24,14 @@ def main():
     df_processed = baecon_eval_df.copy()
     df_processed = process_features(df_processed)
     # Load  the trained Random Forest model
-    rf_classifier = joblib.load(r'C:\Users\Soumendra\Documents\GitHub\BeaconHunter\artifacts\rf_classifier_model.joblib')
+    #rf_classifier = joblib.load(r'C:\Users\Soumendra\Documents\GitHub\BeaconHunter\artifacts\rf_classifier_model.joblib')
+
+    model_path=r'C:\Users\Soumendra\Documents\GitHub\BeaconHunter\artifacts\rf_classifier_model.joblib'
+    rf_classifier = RandomForestModel(n_estimators=50, 
+                                 max_depth=10, 
+                                 min_samples_split=5, 
+                                 random_state=42,
+                                 model_path=model_path)
     isolation_forest = joblib.load(r'C:\Users\Soumendra\Documents\GitHub\BeaconHunter\artifacts\isolation_forest_model.joblib') 
     calculate_fusion_risk_scores(beacon_df_org=baecon_eval_df, rf_classifier=rf_classifier, isolation_forest=isolation_forest)
     baecon_eval_df['risk_label'] = baecon_eval_df['fusion_risk_score'].apply(lambda x: 'HIGH' if x >= 0.8 
@@ -38,7 +46,6 @@ def main():
     # Count of high risk events
     high_risk_count = baecon_eval_df[baecon_eval_df['risk_label'] == 'HIGH'].shape[0]
     print(f'Number of HIGH risk events: {high_risk_count}')
-
 
 if __name__ == "__main__":
     main()  

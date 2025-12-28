@@ -3,6 +3,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 from features import create_derived_features
 import joblib
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import roc_auc_score, precision_score, recall_score, precision_recall_curve
 
 def plot_categorial_distribution(beacon_df, feature_name: str, label: str):
     import matplotlib.pyplot as plt
@@ -79,6 +81,15 @@ def calculate_fusion_risk_scores(beacon_df_org: pd.DataFrame, rf_classifier, iso
     beacon_df = scale_numerical_features(beacon_df, numerical_features)
     # Predict probabilities using the loaded model
     y_prob = rf_classifier.predict_proba(beacon_df)[:, 1]
+
+    ## Default Threshhold
+    #threshold = rf_classifier.get_optimal_threshhold()
+    #y_pred_default = (y_prob >= threshold).astype(int) 
+    #print(y_prob)
+    #y_pred_default = (y_prob >= 0.391).astype(float) 
+    #print(y_pred_default)
+    #risk_scores = MinMaxScaler().fit_transform(y_pred_default.reshape(-1, 1))
+
     risk_scores = MinMaxScaler().fit_transform(y_prob.reshape(-1, 1))
     prediction = rf_classifier.predict(beacon_df)
 
@@ -93,9 +104,13 @@ def calculate_fusion_risk_scores(beacon_df_org: pd.DataFrame, rf_classifier, iso
     #prediction = rf_classifier.predict(beacon_df)
 
     # Combine risk score and anomaly score to get final risk score using weighted average
-    # The choice of weightes can be adjusted based on importance of each score
+    # The choice of weightes can be adjusted based on importance of each score: TODO
     final_risk_score = 0.6 * beacon_df['risk_score'] + 0.4 * beacon_df['anomaly_score_scaled']
-    beacon_df_org['fusion_risk_score'] = final_risk_score
-    beacon_df_org['anomaly_score'] = anomaly_scores
     beacon_df_org['risk_score'] = risk_scores
+    beacon_df_org['fusion_risk_score'] = final_risk_score
+    beacon_df_org['anomaly_score_scaled'] = beacon_df['anomaly_score_scaled']
+    #beacon_df_org['risk_score'] = risk_scores
     beacon_df_org['prediction'] = prediction
+
+    #print(beacon_df.head(100))
+

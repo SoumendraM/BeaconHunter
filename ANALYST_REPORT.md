@@ -100,6 +100,9 @@ and the rest of the countries have "Low" risk based on training data analysis.
 2. Model choice and tradeoff  
     a.  Random Forest for Supervised model.  
     Provides great interpretability of relationships since the dataset is complex with high dimension. Also for complex data, Random Forest model provides good accuracy in prediction. The Data lysis meets that requirement compared to other more simpler models like Linear/Logistic Regression, Decision Trees, SVMs, Naive Bayes, KNN, Neural Networks.  
+    Tradeoffs:  
+    Random Forest Classifier is slow in training anf prediction as training 100s of decision trees takes significant resources are power. It is also space intensive as it takes a lot of memoty to store the individual trees. The vast number of trees created internally makes it difficult to trace the logic behind why it has made a certain decision during prediction.  
+    
     b. Isolation Forest for Unsupervised model.  
     Based on the analysis of training data Isolation Forest has been chosen as it satisfies efficiency (fact training), it effectively handles data with high dimensionality. In the dataset there are some irrelavant feations line source and dextination ips. This model is not very sensitive to irrelevant features and outliers. this is a very popular model used in Network Intrusion Detection in cybersecurity.
 
