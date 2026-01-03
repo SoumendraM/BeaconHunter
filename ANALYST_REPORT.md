@@ -84,20 +84,22 @@ During Exploratory data analysis, the followings have been observed
 a.  Destination ports 80, 443, 53, 8080, 8443, 993, 995 have the maximum events tied to.  
 b.  The host processes cmd.exe', 'cscript.exe', 'meterpreter.exe', 'mshta.exe', 'powershell.exe', regsvr32.exe', 'rundll32.exe', 'sliver-client.exe', 'unknown.bin', 'wscript.exe' have maximum label 1 ro label 0 reation making them highly suspecious.  
 c.  The countries  
-    "US": "High",  
-    "CA": "High",  
-    "GB": "High",  
-    "DE": "High",  
-    "FR": "High",  
-    "JP": "Medium",  
-    "IN": "Medium",  
-    "BR": "Medium",  
-    "AU": "Medium"  
+    "BR": 1,
+    "CN": 1,
+    "HK": 1,
+    "IR": 1,
+    "KP": 1,
+    "NG": 1,
+    "RU": 1,
+    "TR": 1,
+    "UA": 1,
+    "VN":  1
 
-and the rest of the countries have "Low" risk based on training data analysis.
+where the value 1 means high risk and the rest of the countries have "Low" risk (signified with the value 0) based on training data analysis.
 
 
 2. Model choice and tradeoff  
+    **The models that have been chosen** :  
     a.  Random Forest for Supervised model.  
     Provides great interpretability of relationships since the dataset is complex with high dimension. Also for complex data, Random Forest model provides good accuracy in prediction. The Data lysis meets that requirement compared to other more simpler models like Linear/Logistic Regression, Decision Trees, SVMs, Naive Bayes, KNN, Neural Networks.  
     Tradeoffs:  
@@ -106,10 +108,64 @@ and the rest of the countries have "Low" risk based on training data analysis.
     b. Isolation Forest for Unsupervised model.  
     Based on the analysis of training data Isolation Forest has been chosen as it satisfies efficiency (fact training), it effectively handles data with high dimensionality. In the dataset there are some irrelavant feations line source and dextination ips. This model is not very sensitive to irrelevant features and outliers. this is a very popular model used in Network Intrusion Detection in cybersecurity.
 
+    **How you tuned the thresholds**  
+    An estimate of the optinal threshhold has been taken by calculating the probabilities of thr predictions. Then a harmonic mean has been derieved from the precicion and recall points. The maximum of the fscore has been taken as the threshold which balances the precision and recall.
+
+    **A brief comparison: what would have happened if you used only supervised or only unsupervised.**  
+    If a supervised model had only been used, ir sould have excelled at identifying only known, signature based beaconing patterns, as it would have only trained on on datasets which are labelled (benign v/s malefic). Where as an unsupervised model detects what is otherwise known as `zero-day malware` or threats which are unknown by analysing the traffic for anomalies or outliers (that are not marks with known labels).
+
 3. Error Analysis
 
-- Why you chose your supervised and unsupervised algorithms.
-- How you tuned/selected thresholds.
-- A brief comparison: what would have happened if you used only supervised or only unsupervised.
+- Discuss patterns in false positives and false negatives from evaluate_detector.py  
+The distribution of the labels in the training dataset is highly skewed with    
+0 -> 7764  
+1 -> 2236 
 
-Fraudsters will often change their strategies and attempt new ways of committing fraud. Many of these strategies will be completely unexpected. This is why unsupervised methods are often used to detect anomalies. They work by comparing all transactions and identifying ones that have unusual feature values. Importantly, this means we do not have to label any transactions beforehand. (Modify it to explain)
+| Threshold | False Positive | False Negative |
+| ------- | ----- | ------------ |
+| 0.2 | 0 | 67 |
+| 0.3 | 3 | 36 |
+| 0.4 | 19 | 9 |
+| 0.5 | 32 | 5 |
+| 0.6 | 55 | 2 |
+| 0.7 | 121 | 1 |
+| 0.8 | 306 | 0 |
+| 0.9 | 400 | 0 |
+
+With increasing threshhold we can observe that False Positive increases and False Negative decreases.
+
+Since the events with benign labels are 4 times more than the malicious ones there is bound to be class imbalance in terms of accuracy being more dominant towards the benign labeled ones. In C2 Beaconness scenario, a high FP will mean malicious traffic will remain undetected. 
+
+- Suggest at least two concrete changes (data collection, rules, model) that could reduce those errors in a real deployment  
+**Data Collection** : One should update the data collection pipeline to include enriched, stateful session data.  
+**Rules** : Static thresholds often cause high false-positive rates when deployed across diverse network environments. Replace static rules with dynamic risk scoring based on behavioral anomalies.  
+**Model** : The model should calculate a probabilistic score based on Beaconing behavior. assign a higher penalty to false negatives (missing a real attack) while using the rule-based whitelist to manage false positives (reducing alert fatigue).  
+
+
+## 2.3 Prioritization of live events
+
+| event_id | host_id | risk_score | anomaly_score | fusion_risk_score | risk_label |
+| -------- | ------- | ---------- | ------------- | ----------------- | ---------- |
+| EVT-126531315 | HOST-069 | 0.962647 | 0.859394 | 0.911020 | HIGH |
+| EVT-349240739 | HOST-010 | 0.973784 | 0.800987 | 0.887386 | HIGH |
+| EVT-663092550 | HOST-098 | 0.974792 | 0.792772 | 0.883782 | HIGH |
+| EVT-952704438 | HOST-005 | 0.964654 | 0.800241 | 0.882447 | HIGH |
+| EVT-391423501 | HOST-064 | 0.968113 | 0.796416 | 0.882264 | HIGH |  
+
+The above hosts are suspecious with high fusion_risk_score and the following may be the reason for that (which triggerred the detector):
+
+1. EVT-126531315 - Country HK (in suspicious list), process name is "unknown.bin" which is a high risk process, at high risk port 83
+2. EVT-349240739 - Country BR (in suspicious list), process name is "unknown.bin" which is a high risk process, at high risk port 8080. Moreover this may quualify for 61 seconds inter event beacon to a rare country.
+3. EVT-663092550 - Country CN (in suspicious list), process name is "unknown.bin" which is a high risk process, at high risk port 8080
+4. EVT-952704438 - Country HK (in suspicious list), process name is "unknown.bin" which is a high risk process, at high risk port 80
+5. EVT-391423501 - Country HK (in suspicious list), process name is "unknown.bin" which is a high risk process, at high risk port 8080
+
+**For all the above the recommendation would be to isolate the host or block the destination IP**
+
+## 2.4 Limitations and next steps
+The "quality" of C2 detection refers to the signal-to-noise ratio in network traffic. The following factors such as attacckers inserting random variations into the beacon intervals, a large amout of C2 data being hidden in encrypted HTTP sessions. Also legitimate application behavior ofter is made to mimic regular small packet nature of baecons.  
+The data coverage here misses detecting intermediate redirectors that mask true IP destinations.  
+Potential adversarial behavior, that will evade this detector, will focus on blending into legitimate traffic to avoiid detection such as:  
+- Jitter - Introduce random variations in timing
+- Protocol abuse - Beaconing frequently uses common, allowed protocols like HTTP/S, DNS, and SSH to bypass firewalls
+- In-memory execution - Payloads are executed directly in memory to evade leaving trace in disk.

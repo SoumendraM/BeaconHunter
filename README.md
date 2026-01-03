@@ -31,6 +31,11 @@ python -n src.evaluate_detector.py
 python -m src.score_events --input data/beacon_events_eval_unlabeled.csv --output results/eval_scored.csv
 ```
 
+## To run test module
+```bash
+python -m pytest ./tests
+```
+
 ## Files produced as intermediate data persistence for Supervised and Unsupervised
 artifacts/beacon_events_if_results.csv
 artifacts/beacon_events_test_with_risk_scores.csv
