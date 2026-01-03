@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
-from features import create_derived_features
-from utils import process_features 
+from src.features import create_derived_features
+from src.utils import process_features, category_cols_to_category_dtype, categorical_cols_to_dummies, scale_numerical_features
 from sklearn.ensemble import IsolationForest
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import MinMaxScaler
@@ -68,6 +68,10 @@ class RandomForestModel:
         print("Random Forest Classifier Performance:")
         print(classification_report(y_test, y_pred))
         print(confusion_matrix(y_test, y_pred))
+        precision = precision_score(y_test, y_pred)
+        recall = recall_score(y_test, y_pred)
+        print(f"Precision: {precision:.3f}")
+        print(f"Recall: {recall:.3f}")
         roc = roc_auc_score(y_test, self.predict_proba(X_test)[:, 1])
         print(f"Random Forest ROC-AUC: {roc}")
         precision, recall, _ = precision_recall_curve(y_test, self.predict_proba(X_test)[:, 1])
@@ -83,26 +87,7 @@ class RandomForestModel:
         joblib.dump(self.model, path)
 
    
-    # Get tuned classifier threshhold
-    def evaluate_threshhold(self, default_threshold: float = 0.5):
-        y_probs = self.predict_proba(self.X_test)[:, 1]
-
-        #default_threshold = 0.8
-        y_pred_default = (y_probs >= default_threshold).astype(int)
-        cm = confusion_matrix(self.y_test, y_pred_default)
-        print(f"Confusion Matrix (Threshold={default_threshold:0.2f}):\n{cm}")
-
-        # Precision/Recall at default threshold
-        precision = precision_score(self.y_test, y_pred_default)
-        recall = recall_score(self.y_test, y_pred_default)
-        print(f"Precision (Threshold={default_threshold:0.2f}): {precision:.3f}")
-        print(f"Recall (Threshold={default_threshold:0.2f}): {recall:.3f}")
-
-        #ROC-AUC Score (threshold independent)
-        roc_auc = roc_auc_score(self.y_test, y_probs)
-        print(f"\nROC-AUC Score: {roc_auc:.3f}")
-
-    def evaluate_threshold_test(self, X_test: pd.DataFrame, y_test: pd.Series, default_threshold: float = 0.5):
+    def evaluate_with_threshold(self, X_test: pd.DataFrame, y_test: pd.Series, default_threshold: float = 0.5):
         y_probs = self.predict_proba(X_test)[:, 1]
 
         #default_threshold = 0.8
@@ -119,9 +104,12 @@ class RandomForestModel:
         #ROC-AUC Score (threshold independent)
         roc_auc = roc_auc_score(y_test, y_pred_default)
         print(f"\nROC-AUC Score: {roc_auc:.3f}")
+        precision, recall, _ = precision_recall_curve(y_test, self.predict_proba(X_test)[:, 1])
+        pr_auc = auc(recall, precision)
+        print(f"Random Forest PR-AUC: {pr_auc}")
+        return {"roc_auc": roc_auc, "pr_auc": pr_auc}
 
-    r'''    
-    def get_optimal_threshhold_for_test(self, X_test: pd.DataFrame, y_test: pd.Series) -> np.float64:
+    def get_optimal_threshhold(self, X_test: pd.DataFrame, y_test: pd.Series) -> np.float64:
         # Finding an Optimal Threshold (e.g., balancing Precision and Recall)
         # Get all thresholds for Precision-Recall curve
         y_probs = self.predict_proba(X_test)[:, 1]
@@ -133,32 +121,12 @@ class RandomForestModel:
         # find the optimal threshold for the highest f-score
         ix = np.argmax(fscore)
         optimal_threshold_pr = thresholds_pr[ix]
-        print(f"\nOptimal Threshold (Max F1 Score): {optimal_threshold_pr:.3f}")
-        print(f"Precision: {precision_points[ix]:.3f}, Recall: {recall_points[ix]:.3f}")
+        #print(f"\nOptimal Threshold (Max F1 Score): {optimal_threshold_pr:.3f}")
+        #print(f"Precision: {precision_points[ix]:.3f}, Recall: {recall_points[ix]:.3f}")
 
         y_pred_optimal = (y_probs >= optimal_threshold_pr).astype(int)
-        print(f"Confusion Matrix (Optimal Threshold):\n{confusion_matrix(y_test, y_pred_optimal)}")
-        print(type(optimal_threshold_pr))
-        return optimal_threshold_pr
-    '''
-    def get_optimal_threshhold(self) -> np.float64:
-        # Finding an Optimal Threshold (e.g., balancing Precision and Recall)
-        # Get all thresholds for Precision-Recall curve
-        y_probs = self.predict_proba(self.X_test)[:, 1]
-        precision_points, recall_points, thresholds_pr = precision_recall_curve(self.y_test, y_probs)
-
-        # Find the threshold that balances precision and recall (e.g., closest to precision=recall)\
-        fscore = (2 * precision_points * recall_points) / (precision_points + recall_points)
-
-        # find the optimal threshold for the highest f-score
-        ix = np.argmax(fscore)
-        optimal_threshold_pr = thresholds_pr[ix]
-        print(f"\nOptimal Threshold (Max F1 Score): {optimal_threshold_pr:.3f}")
-        print(f"Precision: {precision_points[ix]:.3f}, Recall: {recall_points[ix]:.3f}")
-
-        y_pred_optimal = (y_probs >= optimal_threshold_pr).astype(int)
-        print(f"Confusion Matrix (Optimal Threshold):\n{confusion_matrix(self.y_test, y_pred_optimal)}")
-        print(type(optimal_threshold_pr))
+        #print(f"Confusion Matrix (Optimal Threshold):\n{confusion_matrix(y_test, y_pred_optimal)}")
+        #print(type(optimal_threshold_pr))
         return optimal_threshold_pr
 
 def get_optimal_threshhold_for_test(rf_model: RandomForestModel , X_test: pd.DataFrame, y_test: pd.Series) -> np.float64:
@@ -179,6 +147,10 @@ def get_optimal_threshhold_for_test(rf_model: RandomForestModel , X_test: pd.Dat
     print(f"Confusion Matrix (Optimal Threshold):\n{confusion_matrix(y_test, y_pred_optimal)}")
     print(type(optimal_threshold_pr))
     return optimal_threshold_pr
+
+
+def calculate_fusion_risk_scores(beacon_df_processed: pd.DataFrame):
+    return 0.5 * beacon_df_processed['risk_score'] + 0.5 * beacon_df_processed['anomaly_score']
 
 
 def train_supervised_models(beacon_df: pd.DataFrame):
@@ -213,21 +185,19 @@ def train_supervised_models(beacon_df: pd.DataFrame):
 
     # Create risk score based on predicted probabilities for full dataset
     risk_scores = rf_model.risk_scores(X)
-    # (optional) attach to original dataframe
-    beacon_df['risk_score'] = risk_scores
-
-    #for threshold in np.arange(0.2, 1.0, 0.1):
-    #    rf_model.evaluate_threshhold(threshold)
-    #optimal_threshold_pr = rf_model.get_optimal_threshhold()
-    #print(f"\nOptimal Threshold (Max F1 Score): {optimal_threshold_pr:0.3f}")
 
     print("EVALUATE")
-    print(get_optimal_threshhold_for_test(rf_model, X_test=X_test, y_test=y_test))
+    rf_model.evaluate(X_test, y_test)
+    
+    risk_threshold = rf_model.get_optimal_threshhold(X_test=X_test, y_test=y_test)
+    print("Risk Score (threshold):", risk_threshold)
 
+    print("Evaluate with threshhold:")
+    rf_model.evaluate_with_threshold(X_test, y_test, risk_threshold)
 
     # save the trained model using joblib via class helper
-    #rf_model.save()
-    return rf_model
+    rf_model.save()
+    return rf_model, risk_scores
 
 def train_unsupervised_model(beacon_df: pd.DataFrame):
     n_estimators = 100 # Number of trees in the forest 
@@ -271,4 +241,4 @@ def train_unsupervised_model(beacon_df: pd.DataFrame):
 
     # save the trained model using joblib
     joblib.dump(isolation_forest, r'C:\Users\Soumendra\Documents\GitHub\BeaconHunter\artifacts\isolation_forest_model.joblib')
-    return isolation_forest
+    return isolation_forest, beacon_df['anomaly_prediction'], beacon_df['anomaly_score_scaled']

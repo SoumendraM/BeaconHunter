@@ -3,8 +3,9 @@ from ntpath import join
 import joblib
 import pandas as pd
 
-from utils import calculate_fusion_risk_scores, process_features
-from models import RandomForestModel
+from src.utils import  process_features
+from src. models import calculate_fusion_risk_scores, RandomForestModel
+from sklearn.preprocessing import MinMaxScaler
 
 def main():
 
@@ -32,15 +33,24 @@ def main():
                                  min_samples_split=5, 
                                  random_state=42,
                                  model_path=model_path)
+    
+    baecon_eval_df['risk_score'] = rf_classifier.risk_scores(df_processed)
     isolation_forest = joblib.load(r'C:\Users\Soumendra\Documents\GitHub\BeaconHunter\artifacts\isolation_forest_model.joblib') 
-    calculate_fusion_risk_scores(beacon_df_org=baecon_eval_df, rf_classifier=rf_classifier, isolation_forest=isolation_forest)
+    #calculate_fusion_risk_scores(beacon_df_org=baecon_eval_df, rf_classifier=rf_classifier, isolation_forest=isolation_forest)
+
+    baecon_eval_df['anomaly_score'] = isolation_forest.decision_function(df_processed)
+    scaler = MinMaxScaler()
+    baecon_eval_df['anomaly_score'] = scaler.fit_transform(baecon_eval_df[['anomaly_score']])
+
+    baecon_eval_df['fusion_risk_score'] = calculate_fusion_risk_scores(beacon_df_processed=baecon_eval_df)
+
     baecon_eval_df['risk_label'] = baecon_eval_df['fusion_risk_score'].apply(lambda x: 'HIGH' if x >= 0.8 
                                                                              else ('MEDIUM' if x < 0.8 and x >= 0.5 
                                                                                    else 'LOW'))
     #print(baecon_eval_df[['event_id', 'fusion_risk_score']])
     print("Fusion risk scores calculated and added to the evaluation dataframe.")
     # Save 'event_id', 'host_id', 'fusion_risk_score', 'risk_label' to a CSV file
-    beacon_df_eval_df = baecon_eval_df[['event_id', 'host_id', 'fusion_risk_score', 'risk_label']]
+    beacon_df_eval_df = baecon_eval_df[['event_id', 'host_id', 'risk_score', 'anomaly_score', 'fusion_risk_score', 'risk_label']]
     beacon_df_eval_df.to_csv(arg_output_file, index=False)
 
     # Count of high risk events
