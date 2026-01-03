@@ -17,7 +17,7 @@ def test_beaconness_feature():
 
 def test_wierdness_feature():
     df = pd.DataFrame({
-        'host_id': ['host1', 'host1', 'host1'],
+        'host_id': ['host1', 'host1', 'host2'],
         'inter_event_seconds': [10, 10, 10],
         'dst_port': [80, 443, 12345],
         'proc_name': ['chrome.exe', 'chrome.exe', 'chrome.exe'],
