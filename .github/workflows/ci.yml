@@ -1,5 +1,7 @@
 name: CI
 
+image: python:3.11
+
 on:
   push:
     branches:
@@ -8,27 +10,37 @@ on:
     branches:
       - main
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+# Define the stages of the CI/CD pipeline
+stages:
+  - build
+  - test
+  - lint
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+# Commands to run before every job
+before_script:
+  - python --version
+  - pip install --upgrade pip
+  # Install project dependencies from requirements.txt
+  - pip install -r requirements.txt
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.10'  # Specify your Python version
+# The 'test' job
+test_job:
+  stage: test
+  # Dependencies might be installed in before_script, or here if specific to the test stage
+  script:
+    - echo "Running tests..."
+    # Example: Install testing libraries (e.g., pytest) and run tests
+    - pytest tests
 
-      - name: dependencies
-        run: |
-          pip install -r requirements.txt
+# The 'test' job
+test_job:
+  stage: lint
+  # Dependencies might be installed in before_script, or here if specific to the test stage
+  script:
+    - echo "Running pylints..."
+    # Example: Install testing libraries (e.g., pytest) and run tests
+    - pylint src
 
-      - name: pytest
-        run: |
-          pytest tests 
 
-      - name: pylint
-        run: |
-          pylint src
+
+
