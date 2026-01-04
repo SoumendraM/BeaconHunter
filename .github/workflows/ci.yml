@@ -44,4 +44,4 @@ jobs:
         run: |
           # Discovers and runs tests in the 'tests/' directory (change as needed)
           # Generates a coverage report
-          pytest tests/ --cov=src/ --cov-report=xml --cov-fail-under=30 # Fails if test coverage is below 50%
+          pytest tests/ --cov=src/ --cov-report=xml --cov-fail-under=31 # Fails if test coverage is below 50%
