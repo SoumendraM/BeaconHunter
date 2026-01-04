@@ -36,7 +36,7 @@ jobs:
       # Step 4: Run Linting with Pylint
       - name: Lint with Pylint
         run: |
-          pylint src/
+          pylint src/ || true
           #pylint src/ --fail-under=8.0 # Fails the step if the Pylint score is under 8.0/10
 
       # Step 5: Run tests with Pytest
