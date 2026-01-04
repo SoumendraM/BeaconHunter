@@ -43,6 +43,9 @@ Date:12/28/2025
 8. Created evaluate.py for evalusating The trained models as per the instructions with summary and most misclassified events listed.
 9. Created CLi score_events.py as per the instruction.
 10. Created ANALYSI_REPORT.md, NOTES.md, INTEGRITY.pd, README.md
+11. Created test files test_features.py, test_train_detectorr.py, test_score_events.py sanity testing using pytest testing framework.
+12. Created ci.yml for python setup, library installation, linting and testing during push and pull request.
+13. Created a minimal Dockerfile.
 
 # Dead ends and bug
 1. During github push pylint reports some errors have been left unaddressed.
