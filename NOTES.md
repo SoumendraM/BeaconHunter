@@ -41,16 +41,19 @@ Date:12/28/2025
 6. Created helper modules models.py for model specific, featiures.py for feature specific and utils.py for auxilliary classes, methods are data types.
 7. Created train_detector.py for training the models.
 8. Created evaluate.py for evalusating The trained models as per the instructions with summary and most misclassified events listed.
-9. Created CLi score_events.py as per the instruction.
+9. Created CLI score_events.py as per the instruction.
 10. Created ANALYSI_REPORT.md, NOTES.md, INTEGRITY.pd, README.md
 11. Created test files test_features.py, test_train_detectorr.py, test_score_events.py sanity testing using pytest testing framework.
 12. Created ci.yml for python setup, library installation, linting and testing during push and pull request.
 13. Created a minimal Dockerfile.
+14. Successfully run ci.yml with `git push`
+![Alternative text](artifacts/image.png)
 
 # Dead ends and bug
 1. During github push pylint reports some errors have been left unaddressed.
 2. DockerFile is untested.
 3. Could not create derived feature `beaconness` by grouping `host_id` and `dst_port` adn calculatin the variance on `inter_events_seconds` due to lack of data, in the training dataset.
+4. Tests are passing under constarints (not full code coverage) 
 
 # What would you do next if you had more time
 1. Had there been larger dataset;, whould have experimented with Histogram based Gradient Boosting for classification, as it helps in fnding complex patterns.
