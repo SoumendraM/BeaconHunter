@@ -5,7 +5,7 @@ import tempfile
 import os
 from unittest.mock import patch, MagicMock
 import sys
-from src.score_events import main
+from score_events import main
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 

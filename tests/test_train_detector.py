@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 from unittest.mock import patch, MagicMock
 import tempfile
-from src.train_detector import main
+from train_detector import main
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))

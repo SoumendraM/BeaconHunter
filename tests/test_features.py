@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from src.features import create_derived_features
+from features import create_derived_features
 
 def test_beaconness_feature():
     df = pd.DataFrame({
