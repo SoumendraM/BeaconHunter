@@ -1,7 +1,6 @@
 # Name of the workflow
 name: Python CI/CD
 
-# Trigger the workflow on pushes and pull requests to any branch
 on: [push, pull_request]
 
 # Define the jobs to run
@@ -13,7 +12,7 @@ jobs:
     # Use a matrix strategy to test across multiple Python versions
     strategy:
       matrix:
-        python-version: ['3.10'] # Test on multiple Python versions
+        python-version: ['3.10']
 
     steps:
       # Step 1: Check out the repository code
@@ -37,7 +36,8 @@ jobs:
       # Step 4: Run Linting with Pylint
       - name: Lint with Pylint
         run: |
-          pylint src/ --fail-under=8.0 # Fails the step if the Pylint score is under 8.0/10
+          pylint src/
+          #pylint src/ --fail-under=8.0 # Fails the step if the Pylint score is under 8.0/10
 
       # Step 5: Run tests with Pytest
       - name: Test with Pytest
