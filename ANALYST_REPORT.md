@@ -165,7 +165,10 @@ The above hosts are suspecious with high fusion_risk_score and the following may
 ## 2.4 Limitations and next steps
 The "quality" of C2 detection refers to the signal-to-noise ratio in network traffic. The following factors such as attacckers inserting random variations into the beacon intervals, a large amout of C2 data being hidden in encrypted HTTP sessions. Also legitimate application behavior ofter is made to mimic regular small packet nature of baecons.  
 The data coverage here misses detecting intermediate redirectors that mask true IP destinations.  
+
 Potential adversarial behavior, that will evade this detector, will focus on blending into legitimate traffic to avoiid detection such as:  
 - Jitter - Introduce random variations in timing
 - Protocol abuse - Beaconing frequently uses common, allowed protocols like HTTP/S, DNS, and SSH to bypass firewalls
 - In-memory execution - Payloads are executed directly in memory to evade leaving trace in disk.
+
+If I stay in this role for some months, will experiment with different models and their combinations, threshold and training dataset analysing the statistics of the trained models to reduce errors. 
